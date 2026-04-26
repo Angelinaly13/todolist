@@ -1,0 +1,7 @@
+logging:
+  level:
+    com.example.todolist: WARN
+    org.springframework: ERROR
+
+app:
+  environment: Production

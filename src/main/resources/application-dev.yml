@@ -1,0 +1,7 @@
+logging:
+  level:
+    com.example.todolist: DEBUG
+    org.springframework: INFO
+
+app:
+  environment: Development

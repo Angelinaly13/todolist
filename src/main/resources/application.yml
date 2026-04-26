@@ -1,0 +1,10 @@
+spring:
+  profiles:
+    active: dev   # по умолчанию dev, можно переключить на prod
+
+server:
+  port: 8080
+
+app:
+  name: To-Do List Manager
+  version: 1.0.0
