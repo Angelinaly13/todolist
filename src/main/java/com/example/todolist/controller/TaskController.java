@@ -3,12 +3,13 @@ package com.example.todolist.controller;
 import com.example.todolist.dto.TaskCreateDto;
 import com.example.todolist.dto.TaskResponseDto;
 import com.example.todolist.dto.TaskUpdateDto;
+import com.example.todolist.exception.TaskNotFoundException;
 import com.example.todolist.mapper.TaskMapper;
 import com.example.todolist.model.Task;
 import com.example.todolist.service.TaskService;
 import com.example.todolist.validation.OnCreate;
 import com.example.todolist.validation.OnUpdate;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -29,52 +30,63 @@ public class TaskController {
   private final TaskService taskService;
   private final TaskMapper taskMapper;
 
-  @Autowired
+  @Value("${app.version:1.0.0}")
+  private String apiVersion;
+
   public TaskController(TaskService taskService, TaskMapper taskMapper) {
     this.taskService = taskService;
     this.taskMapper = taskMapper;
   }
 
   @GetMapping
-  public List<TaskResponseDto> getAllTasks() {
-    return taskService.getAllTasks().stream()
+  public ResponseEntity<List<TaskResponseDto>> getAllTasks() {
+    List<TaskResponseDto> tasks = taskService.getAllTasks().stream()
             .map(taskMapper::toResponseDto)
             .collect(Collectors.toList());
+    return ResponseEntity.ok()
+            .header("X-Total-Count", String.valueOf(tasks.size()))
+            .header("X-API-Version", apiVersion)
+            .body(tasks);
   }
 
   @GetMapping("/{id}")
   public ResponseEntity<TaskResponseDto> getTaskById(@PathVariable Long id) {
-    return taskService.getTaskById(id)
-            .map(taskMapper::toResponseDto)
-            .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
+    Task task = taskService.getTaskById(id)
+            .orElseThrow(() -> new TaskNotFoundException(id));
+    return ResponseEntity.ok()
+            .header("X-API-Version", apiVersion)
+            .body(taskMapper.toResponseDto(task));
   }
 
   @PostMapping
-  @ResponseStatus(HttpStatus.CREATED)
-  public TaskResponseDto createTask(@Validated(OnCreate.class) @RequestBody TaskCreateDto createDto) {
+  public ResponseEntity<TaskResponseDto> createTask(@Validated(OnCreate.class) @RequestBody TaskCreateDto createDto) {
     Task task = taskMapper.toEntity(createDto);
     task.setCreatedAt(LocalDateTime.now());
     Task saved = taskService.createTask(task);
-    return taskMapper.toResponseDto(saved);
+    return ResponseEntity.status(HttpStatus.CREATED)
+            .header("X-API-Version", apiVersion)
+            .body(taskMapper.toResponseDto(saved));
   }
 
   @PutMapping("/{id}")
   public ResponseEntity<TaskResponseDto> updateTask(@PathVariable Long id,
                                                     @Validated(OnUpdate.class) @RequestBody TaskUpdateDto updateDto) {
-    return taskService.getTaskById(id).map(existing -> {
-      taskMapper.updateEntity(updateDto, existing);
-      Task updated = taskService.updateTask(id, existing).orElse(existing);
-      return ResponseEntity.ok(taskMapper.toResponseDto(updated));
-    }).orElse(ResponseEntity.notFound().build());
+    Task existing = taskService.getTaskById(id)
+            .orElseThrow(() -> new TaskNotFoundException(id));
+    taskMapper.updateEntity(updateDto, existing);
+    Task updated = taskService.updateTask(id, existing).orElse(existing);
+    return ResponseEntity.ok()
+            .header("X-API-Version", apiVersion)
+            .body(taskMapper.toResponseDto(updated));
   }
 
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
     if (taskService.deleteTask(id)) {
-      return ResponseEntity.noContent().build();
-    } else {
-      return ResponseEntity.notFound().build();
+      return ResponseEntity.noContent()
+              .header("X-API-Version", apiVersion)
+              .build();
     }
+    throw new TaskNotFoundException(id);
   }
 }
