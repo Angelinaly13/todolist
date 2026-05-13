@@ -6,14 +6,18 @@ import com.example.todolist.dto.TaskUpdateDto;
 import com.example.todolist.mapper.TaskMapper;
 import com.example.todolist.model.Task;
 import com.example.todolist.service.TaskService;
+import com.example.todolist.validation.OnCreate;
+import com.example.todolist.validation.OnUpdate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 /**
  * REST контроллер для управления задачами
@@ -48,18 +52,17 @@ public class TaskController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  public TaskResponseDto createTask(@RequestBody TaskCreateDto createDto) {
+  public TaskResponseDto createTask(@Validated(OnCreate.class) @RequestBody TaskCreateDto createDto) {
     Task task = taskMapper.toEntity(createDto);
-    task.setCreatedAt(LocalDateTime.now()); // устанавливаем дату создания
+    task.setCreatedAt(LocalDateTime.now());
     Task saved = taskService.createTask(task);
     return taskMapper.toResponseDto(saved);
   }
 
   @PutMapping("/{id}")
   public ResponseEntity<TaskResponseDto> updateTask(@PathVariable Long id,
-                                                    @RequestBody TaskUpdateDto updateDto) {
+                                                    @Validated(OnUpdate.class) @RequestBody TaskUpdateDto updateDto) {
     return taskService.getTaskById(id).map(existing -> {
-      // Частичное обновление: копируем только не-null поля из DTO
       taskMapper.updateEntity(updateDto, existing);
       Task updated = taskService.updateTask(id, existing).orElse(existing);
       return ResponseEntity.ok(taskMapper.toResponseDto(updated));
