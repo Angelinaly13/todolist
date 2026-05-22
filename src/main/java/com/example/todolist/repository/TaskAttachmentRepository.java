@@ -1,37 +1,11 @@
 package com.example.todolist.repository;
 
 import com.example.todolist.model.TaskAttachment;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
+import java.util.List;
 
-@Repository
-public class TaskAttachmentRepository {
-  private final Map<Long, TaskAttachment> store = new ConcurrentHashMap<>();
-  private final AtomicLong idGenerator = new AtomicLong(1);
+public interface TaskAttachmentRepository extends JpaRepository<TaskAttachment, Long> {
 
-  public TaskAttachment save(TaskAttachment attachment) {
-    if (attachment.getId() == null) {
-      attachment.setId(idGenerator.getAndIncrement());
-    }
-    store.put(attachment.getId(), attachment);
-    return attachment;
-  }
-
-  public Optional<TaskAttachment> findById(Long id) {
-    return Optional.ofNullable(store.get(id));
-  }
-
-  public List<TaskAttachment> findByTaskId(Long taskId) {
-    return store.values().stream()
-            .filter(a -> a.getTaskId().equals(taskId))
-            .collect(Collectors.toList());
-  }
-
-  public void deleteById(Long id) {
-    store.remove(id);
-  }
+  List<TaskAttachment> findByTask_Id(Long taskId);
 }

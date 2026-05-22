@@ -4,7 +4,6 @@ import com.example.todolist.dto.AttachmentResponseDto;
 import com.example.todolist.model.TaskAttachment;
 import com.example.todolist.repository.TaskAttachmentRepository;
 import org.apache.commons.io.FilenameUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
@@ -39,7 +38,7 @@ public class AttachmentService {
     try {
       String originalName = file.getOriginalFilename();
       String extension = FilenameUtils.getExtension(originalName);
-      String storedName = UUID.randomUUID().toString() + (extension.isEmpty() ? "" : "." + extension);
+      String storedName = UUID.randomUUID() + (extension.isEmpty() ? "" : "." + extension);
 
       Path targetPath = uploadPath.resolve(storedName);
       file.transferTo(targetPath.toFile());
@@ -61,7 +60,7 @@ public class AttachmentService {
   }
 
   public List<AttachmentResponseDto> getAttachmentsByTaskId(Long taskId) {
-    return attachmentRepository.findByTaskId(taskId).stream()
+    return attachmentRepository.findByTask_Id(taskId).stream()
             .map(a -> new AttachmentResponseDto(a.getId(), a.getFileName(), a.getSize(), a.getUploadedAt()))
             .collect(Collectors.toList());
   }
@@ -75,9 +74,8 @@ public class AttachmentService {
       Resource resource = new UrlResource(filePath.toUri());
       if (resource.exists() && resource.isReadable()) {
         return resource;
-      } else {
-        throw new RuntimeException("Could not read file");
       }
+      throw new RuntimeException("Could not read file");
     } catch (IOException e) {
       throw new RuntimeException("Failed to load file", e);
     }
