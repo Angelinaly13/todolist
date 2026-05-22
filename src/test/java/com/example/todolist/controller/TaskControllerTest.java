@@ -1,20 +1,25 @@
 package com.example.todolist.controller;
 
 import com.example.todolist.model.Task;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.*;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class TaskControllerTest {
 
@@ -41,9 +46,11 @@ class TaskControllerTest {
     HttpEntity<String> entity = new HttpEntity<>(requestJson, headers);
 
     ResponseEntity<Task> response = restTemplate.postForEntity("/api/tasks", entity, Task.class);
+
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getId()).isNotNull();
+
     createdTaskId = response.getBody().getId();
   }
 
@@ -51,6 +58,7 @@ class TaskControllerTest {
   @Order(2)
   void testGetAllTasks_Positive() {
     ResponseEntity<Task[]> response = restTemplate.getForEntity("/api/tasks", Task[].class);
+
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody()).isNotEmpty();
   }
@@ -59,6 +67,7 @@ class TaskControllerTest {
   @Order(3)
   void testGetTaskById_Positive() {
     ResponseEntity<Task> response = restTemplate.getForEntity("/api/tasks/" + createdTaskId, Task.class);
+
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getTitle()).isEqualTo("Тестовая задача");
@@ -68,6 +77,7 @@ class TaskControllerTest {
   @Order(4)
   void testGetTaskById_Negative_NotFound() {
     ResponseEntity<Task> response = restTemplate.getForEntity("/api/tasks/99999", Task.class);
+
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
   }
 
@@ -95,6 +105,7 @@ class TaskControllerTest {
             entity,
             Task.class
     );
+
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getTitle()).isEqualTo("Обновлённая задача");
@@ -120,6 +131,7 @@ class TaskControllerTest {
             entity,
             Task.class
     );
+
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
   }
 
@@ -132,6 +144,7 @@ class TaskControllerTest {
             null,
             Void.class
     );
+
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
   }
 
@@ -144,6 +157,7 @@ class TaskControllerTest {
             null,
             Void.class
     );
+
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
   }
 }
