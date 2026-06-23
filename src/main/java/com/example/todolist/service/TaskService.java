@@ -7,13 +7,14 @@ import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- *Сервис для работы с задачами
+ * Сервис для работы с задачами
  */
 @Service
 public class TaskService {
@@ -52,14 +53,20 @@ public class TaskService {
   }
 
   public Task createTask(Task task) {
+    if (task.getCreatedAt() == null) {
+      task.setCreatedAt(LocalDateTime.now());
+    }
     return taskRepository.save(task);
   }
 
   public Optional<Task> updateTask(Long id, Task updatedTask) {
     return taskRepository.findById(id).map(existing -> {
-      existing.setTitle(updatedTask.getTitle());
-      existing.setDescription(updatedTask.getDescription());
+      if (updatedTask.getTitle() != null) existing.setTitle(updatedTask.getTitle());
+      if (updatedTask.getDescription() != null) existing.setDescription(updatedTask.getDescription());
       existing.setCompleted(updatedTask.isCompleted());
+      if (updatedTask.getDueDate() != null) existing.setDueDate(updatedTask.getDueDate());
+      if (updatedTask.getPriority() != null) existing.setPriority(updatedTask.getPriority());
+      if (updatedTask.getTags() != null) existing.setTags(updatedTask.getTags());
       return taskRepository.save(existing);
     });
   }
@@ -71,7 +78,6 @@ public class TaskService {
     }
     return false;
   }
-
 
   public Map<String, Task> getTaskCache() {
     return taskCache;
